@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from app.eval.request_logger import RequestLogger
+from app.evals.request_logger import RequestLogger
 from app.rag.models import RequestLog, TokenUsage
 
 

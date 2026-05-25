@@ -150,7 +150,7 @@ POST /query
   → Retriever (embed query → Qdrant top-k vector search → RetrievedChunk[])
   → Generator (LLM prompt with numbered chunks [1..k] → answer + [n] citations)
   → CitationValidator (validate [n] ranges; downgrade violations to refusal)
-  → RequestLogger (append JSONL to reports/eval_runs/requests-YYYYMMDD.jsonl)
+  → RequestLogger (append JSONL to backend/reports/eval_runs/requests-YYYYMMDD.jsonl)
   → AnswerResult (answer, citations, chunks, scores, latency, cost, refused)
 ```
 
@@ -185,13 +185,16 @@ ai-system-design-coach/
     .env.example               # document all required vars
   frontend/
     src/
-      pages/                   # chat page
-      components/              # citation renderer, evaluation panel
+      App.tsx                  # root component
+      components/              # Chat, AnswerView, EvaluationPanel
+      lib/                     # citations.ts tokenizer + citations.test.ts
+      api/                     # client.ts (typed POST /query wrapper)
+      types.ts                 # shared TypeScript types
   docs/
     raw/                       # fetched source docs (gitignored)
     superpowers/specs/         # per-phase design specs
-  reports/
-    eval_runs/                 # JSONL request logs + eval HTML reports
+  backend/reports/
+    eval_runs/                 # JSONL request logs + eval HTML reports (gitignored)
   HANDOVERS/                   # one file per completed task (CLAUDE Rule 2)
   docker-compose.yml           # Qdrant
   PRD.md                       # live product requirements (CLAUDE Rule 4)

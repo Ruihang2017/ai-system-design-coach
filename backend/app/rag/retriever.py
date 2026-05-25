@@ -1,9 +1,16 @@
 """Vector retrieval from Qdrant."""
 
+from typing import Protocol, runtime_checkable
+
 from qdrant_client import QdrantClient
 
 from app.providers.embeddings import EmbeddingProvider
 from app.rag.models import Chunk, RetrievedChunk
+
+
+@runtime_checkable
+class RetrieverProtocol(Protocol):
+    def search(self, query: str, top_k: int | None = None) -> list[RetrievedChunk]: ...
 
 
 class Retriever:

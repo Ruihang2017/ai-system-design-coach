@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from app.config import Settings
-from app.eval.request_logger import RequestLogger
+from app.evals.request_logger import RequestLogger
 from app.providers.llm import FakeLLMProvider
 from app.rag.generator import Generator
 from app.rag.models import Chunk, RetrievedChunk, TokenUsage

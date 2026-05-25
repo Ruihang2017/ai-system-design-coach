@@ -6,12 +6,13 @@ import uuid
 from datetime import datetime, timezone
 
 from app.config import Settings, settings as default_settings
-from app.eval.request_logger import RequestLogger
+from app.evals.request_logger import RequestLogger
 from app.constants import REFUSAL_MESSAGE
 from app.rag.citation_checker import check_and_enforce
 from app.rag.generator import Generator
 from app.rag.models import AnswerResult, RequestLog, add_usage, compute_cost
 from app.rag.query_rewriter import QueryRewriter
+from app.rag.retriever import RetrieverProtocol
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ def _ms(start: float) -> float:
 
 
 class RAGOrchestrator:
-    def __init__(self, rewriter: QueryRewriter, retriever, generator: Generator,
+    def __init__(self, rewriter: QueryRewriter, retriever: RetrieverProtocol, generator: Generator,
                  request_logger: RequestLogger, settings: Settings) -> None:
         self._rewriter = rewriter
         self._retriever = retriever
