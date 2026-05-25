@@ -30,3 +30,18 @@ def test_run_ingest_skips_failed_fetches():
     s = Settings(_env_file=None, qdrant_collection="c2")
     count = run_ingest(s, sources, client=client, embedder=embedder, fetch=fetch)
     assert count > 0  # only the good doc contributed
+
+
+def test_run_ingest_continues_when_fetch_raises():
+    client = QdrantClient(location=":memory:")
+    embedder = FakeEmbeddingProvider(dim=8)
+    sources = [{"url": "https://x/boom", "title": "Boom"}, {"url": "https://x/ok", "title": "Ok"}]
+
+    def fetch(url: str):
+        if url.endswith("boom"):
+            raise RuntimeError("403 Forbidden")
+        return "word " * 600
+
+    s = Settings(_env_file=None, qdrant_collection="c3")
+    count = run_ingest(s, sources, client=client, embedder=embedder, fetch=fetch)
+    assert count > 0  # the good source still ingested despite the first source raising

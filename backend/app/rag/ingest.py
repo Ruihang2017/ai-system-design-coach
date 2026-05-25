@@ -35,7 +35,11 @@ def run_ingest(
     total = 0
     for src in sources:
         url, title = src["url"], src.get("title", src["url"])
-        text = fetch(url)
+        try:
+            text = fetch(url)
+        except Exception as exc:  # noqa: BLE001 - one bad source must not abort ingestion
+            logger.warning("Skipping (fetch error): %s (%s)", url, exc)
+            continue
         if not text:
             logger.warning("Skipping (no content): %s", url)
             continue

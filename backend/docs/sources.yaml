@@ -14,18 +14,14 @@ sources:
     title: Qdrant - Similarity Search
   - url: https://qdrant.tech/articles/hybrid-search/
     title: Qdrant - Hybrid Search
-  - url: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/
-    title: RAGAS - Faithfulness
-  - url: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_precision/
-    title: RAGAS - Context Precision
-  - url: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/answer_relevance/
-    title: RAGAS - Answer Relevance
+  - url: https://raw.githubusercontent.com/explodinggradients/ragas/main/README.md
+    title: RAGAS - Overview and Metrics
+  - url: https://qdrant.tech/articles/what-are-embeddings/
+    title: Qdrant - What Are Embeddings
   - url: https://fastapi.tiangolo.com/tutorial/first-steps/
     title: FastAPI - First Steps
   - url: https://fastapi.tiangolo.com/async/
     title: FastAPI - Concurrency and async
-  - url: https://platform.openai.com/docs/guides/embeddings
-    title: OpenAI - Embeddings Guide
   - url: https://docs.docker.com/get-started/docker-overview/
     title: Docker - Overview
   - url: https://redis.io/docs/latest/develop/get-started/vector-database/
