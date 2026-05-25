@@ -1,0 +1,34 @@
+# Curated documentation pages to ingest. Public docs used for educational RAG.
+sources:
+  - url: https://python.langchain.com/docs/tutorials/rag/
+    title: LangChain - RAG Tutorial
+  - url: https://python.langchain.com/docs/concepts/rag/
+    title: LangChain - RAG Concepts
+  - url: https://python.langchain.com/docs/concepts/text_splitters/
+    title: LangChain - Text Splitters
+  - url: https://langchain-ai.github.io/langgraph/concepts/why-langgraph/
+    title: LangGraph - Why LangGraph
+  - url: https://qdrant.tech/documentation/overview/
+    title: Qdrant - Overview
+  - url: https://qdrant.tech/documentation/concepts/search/
+    title: Qdrant - Similarity Search
+  - url: https://qdrant.tech/articles/hybrid-search/
+    title: Qdrant - Hybrid Search
+  - url: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/faithfulness/
+    title: RAGAS - Faithfulness
+  - url: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/context_precision/
+    title: RAGAS - Context Precision
+  - url: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/answer_relevance/
+    title: RAGAS - Answer Relevance
+  - url: https://fastapi.tiangolo.com/tutorial/first-steps/
+    title: FastAPI - First Steps
+  - url: https://fastapi.tiangolo.com/async/
+    title: FastAPI - Concurrency and async
+  - url: https://platform.openai.com/docs/guides/embeddings
+    title: OpenAI - Embeddings Guide
+  - url: https://docs.docker.com/get-started/docker-overview/
+    title: Docker - Overview
+  - url: https://redis.io/docs/latest/develop/get-started/vector-database/
+    title: Redis - Vector Database
+  - url: https://opentelemetry.io/docs/concepts/observability-primer/
+    title: OpenTelemetry - Observability Primer
