@@ -1,0 +1,1 @@
+Rewrite the user's question to maximize document retrieval quality. Expand abbreviations, resolve obvious ambiguity, and keep it concise. Return ONLY the rewritten query text with no preamble. If the question is already clear, return it unchanged.
