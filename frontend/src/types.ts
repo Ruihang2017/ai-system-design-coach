@@ -14,3 +14,4 @@ export interface AnswerResult {
   cost_usd: number;
   model: string;
 }
+export type Highlight = { turn: number; n: number } | null;

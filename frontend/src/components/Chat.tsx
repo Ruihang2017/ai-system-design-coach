@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { postQuery } from "../api/client";
-import type { AnswerResult } from "../types";
+import type { AnswerResult, Highlight } from "../types";
 import { AnswerView } from "./AnswerView";
 import { EvaluationPanel } from "./EvaluationPanel";
 
@@ -10,7 +10,7 @@ export function Chat() {
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [loading, setLoading] = useState(false);
-  const [highlight, setHighlight] = useState<number | null>(null);
+  const [highlight, setHighlight] = useState<Highlight>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -29,9 +29,9 @@ export function Chat() {
     }
   }
 
-  function onCiteClick(n: number) {
-    setHighlight(n);
-    document.getElementById(`chunk-${n}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  function onCiteClick(turnIdx: number, n: number) {
+    setHighlight({ turn: turnIdx, n });
+    document.getElementById(`chunk-${turnIdx}-${n}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
   return (
@@ -42,8 +42,8 @@ export function Chat() {
           {turn.error && <div className="error">{turn.error}</div>}
           {turn.result && (
             <div className={`a ${turn.result.refused ? "refused" : ""}`}>
-              <AnswerView answer={turn.result.answer} onCiteClick={onCiteClick} />
-              <EvaluationPanel result={turn.result} highlight={highlight} />
+              <AnswerView answer={turn.result.answer} onCiteClick={(n) => onCiteClick(i, n)} />
+              <EvaluationPanel result={turn.result} turnIdx={i} highlight={highlight} />
             </div>
           )}
         </div>
