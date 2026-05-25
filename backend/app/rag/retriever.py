@@ -16,7 +16,7 @@ class Retriever:
         self._top_k = top_k
 
     def search(self, query: str, top_k: int | None = None) -> list[RetrievedChunk]:
-        k = top_k or self._top_k
+        k = top_k if top_k is not None else self._top_k
         vector = self._embedder.embed_query(query)
         response = self._client.query_points(
             collection_name=self._collection, query=vector, limit=k, with_payload=True

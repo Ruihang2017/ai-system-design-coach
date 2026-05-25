@@ -51,3 +51,20 @@ def test_uncited_answer_downgrades_to_refusal(tmp_path: Path):
     orch = _orchestrator(tmp_path, FakeRetriever([_rc(1, 0.9)]), "Trust me, no citation here.")
     result = orch.answer("explain something")
     assert result.refused is True and result.answer == REFUSAL_MESSAGE
+
+
+def test_rewrite_usage_counted_when_refusing(tmp_path):
+    """When rewrite is enabled and the score gate refuses, the rewrite's token
+    usage is still counted, but the generator is never called."""
+    s = Settings(_env_file=None, llm_provider="fake", score_threshold=0.30, rewrite_enabled=True)
+    llm = FakeLLMProvider(response="rewritten query", usage=TokenUsage(prompt_tokens=7, completion_tokens=5, total_tokens=12))
+    rewriter = QueryRewriter(llm, "REWRITE", enabled=True)
+    generator = Generator(llm, "SYSTEM")
+    logger = RequestLogger(tmp_path)
+    orch = RAGOrchestrator(rewriter, FakeRetriever([_rc(1, 0.05)]), generator, logger, s)
+
+    result = orch.answer("rag?")
+
+    assert result.refused is True
+    assert result.usage.total_tokens == 12          # only the rewrite call
+    assert result.usage.completion_tokens == 5       # generation was skipped

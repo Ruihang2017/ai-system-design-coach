@@ -10,7 +10,7 @@ from app.eval.request_logger import RequestLogger
 from app.constants import REFUSAL_MESSAGE
 from app.rag.citation_checker import check_and_enforce
 from app.rag.generator import Generator
-from app.rag.models import AnswerResult, RequestLog, TokenUsage, add_usage, compute_cost
+from app.rag.models import AnswerResult, RequestLog, add_usage, compute_cost
 from app.rag.query_rewriter import QueryRewriter
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ class RAGOrchestrator:
             config_snapshot={
                 "top_k": self._settings.top_k, "chunk_size": self._settings.chunk_size,
                 "embed_model": self._settings.embed_model, "score_threshold": self._settings.score_threshold,
-                "rewrite_enabled": self._settings.rewrite_enabled,
+                "rerank": False, "rewrite_enabled": self._settings.rewrite_enabled,
             },
         )
         self._logger.log(record)
