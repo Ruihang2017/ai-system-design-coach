@@ -1,0 +1,40 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
+*.log
+
+# --- Environment / secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Node / frontend ---
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.tsbuildinfo
+
+# --- Project data artifacts (can be large / regenerable) ---
+docs/raw/
+docs/processed/
+qdrant_storage/
+
+# --- Eval run logs (keep dir, ignore generated logs) ---
+reports/eval_runs/*.jsonl
+reports/eval_runs/*.html
+!reports/eval_runs/.gitkeep
+
+# --- OS / IDE ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
