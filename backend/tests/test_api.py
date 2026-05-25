@@ -1,0 +1,40 @@
+from fastapi.testclient import TestClient
+
+from app.main import app, get_orchestrator
+from app.rag.models import AnswerResult, Chunk, RetrievedChunk, TokenUsage
+
+
+class FakeOrchestrator:
+    def answer(self, query: str) -> AnswerResult:
+        rc = RetrievedChunk(chunk=Chunk(id="d::0", text="ctx", source_url="u", title="T", doc_id="d", chunk_index=0), score=0.9, n=1)
+        return AnswerResult(request_id="r1", answer="grounded [1]", citations=[1], chunks=[rc],
+                            refused=False, latency_ms={"total": 5.0}, usage=TokenUsage(total_tokens=10),
+                            cost_usd=0.001, model="gpt-4o-mini")
+
+
+def _client():
+    app.dependency_overrides[get_orchestrator] = lambda: FakeOrchestrator()
+    return TestClient(app)
+
+
+def test_query_returns_answer_result():
+    client = _client()
+    resp = client.post("/query", json={"query": "what is rag?"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["answer"] == "grounded [1]"
+    assert body["citations"] == [1]
+    assert body["chunks"][0]["chunk"]["title"] == "T"
+    app.dependency_overrides.clear()
+
+
+def test_query_validation_error_on_missing_field():
+    client = _client()
+    resp = client.post("/query", json={})
+    assert resp.status_code == 422
+    app.dependency_overrides.clear()
+
+
+def test_health_ok():
+    client = TestClient(app)
+    assert client.get("/health").status_code == 200
