@@ -1,4 +1,3 @@
-import pytest
 from app.providers.llm import FakeLLMProvider, get_llm_provider
 from app.rag.models import TokenUsage
 from app.config import Settings

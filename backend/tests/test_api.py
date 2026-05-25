@@ -35,6 +35,27 @@ def test_query_validation_error_on_missing_field():
     app.dependency_overrides.clear()
 
 
-def test_health_ok():
+def test_health_ok(monkeypatch):
+    class _FakeQdrant:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get_collections(self):
+            return []
+
+    monkeypatch.setattr("qdrant_client.QdrantClient", _FakeQdrant)
     client = TestClient(app)
-    assert client.get("/health").status_code == 200
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["qdrant"] is True
+
+
+def test_health_reports_qdrant_down(monkeypatch):
+    def _boom(*args, **kwargs):
+        raise ConnectionError("qdrant unreachable")
+
+    monkeypatch.setattr("qdrant_client.QdrantClient", _boom)
+    client = TestClient(app)
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["qdrant"] is False
