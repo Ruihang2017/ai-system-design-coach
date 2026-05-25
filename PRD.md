@@ -189,13 +189,16 @@ LangSmith (traces) + Eval Store
 ### Data Sources
 50–150 documents covering: LangChain, LangGraph, LlamaIndex, Haystack, LangSmith, RAGAS, DeepEval, Qdrant, Weaviate, Pinecone, Chroma, FastAPI, Docker, Postgres, Redis, OpenTelemetry.
 
+**Phase 1 corpus:** 14 curated URLs fetched from a `docs/sources.yaml` allowlist; 285 chunks ingested as of 2026-05-26. Ingestion is resilient — sources that return HTTP errors (e.g., bot-blocking doc sites) are logged and skipped without crashing the run; fetchable alternatives are substituted in the allowlist.
+
 ---
 
 ## 9. Roadmap
 
-### Phase 1 — Basic RAG *(Week 1–2)*
+### Phase 1 — Basic RAG *(Week 1–2)* ✅ Complete — 2026-05-26
 Doc ingestion → chunking → embedding → retrieval → generation with citations.
 **Done when:** 20 sample questions return cited answers.
+**Shipped:** pipeline + minimal UI shipped; ingestion/retrieval verified live (14 sources, 285 chunks); full cited-answer smoke pending user's `OPENAI_API_KEY` (plumbing verified via fake LLM + real retrieval).
 
 ### Phase 2 — Golden Eval Dataset *(Week 3)*
 100 benchmark questions with expected answers, required sources, refusal cases.
@@ -224,12 +227,14 @@ LangSmith integration, cost tracking, latency breakdown, eval history, regressio
 | Eval costs balloon | Medium | Medium | Cache embeddings; batch eval calls; use cheaper judge for routine runs |
 | Project reads as "yet another RAG demo" | Medium | High | Lead the README with eval results, not features. Show before/after reports. |
 | Scope creep into agents, tools, fine-tuning | High | High | Strict non-goals. Defer to v2. |
+| Doc site bot-blocking (403 on automated fetch) | Medium | Low | Resilient ingestion: failing sources are logged and skipped; fetchable alternatives substituted in allowlist (observed in Phase 1: 4 URLs replaced). |
 
 ---
 
 ## 11. Open Questions
 
-- Do we ship with a single LLM or expose model choice in the UI?
+- ~~Do we ship with a single LLM or expose model choice in the UI?~~ **Resolved (Phase 1):** single configurable LLM via env (`LLM_PROVIDER` / `LLM_MODEL`); defaults to OpenAI `gpt-4o-mini`. Model choice is NOT exposed in the UI for MVP.
+- ~~Embeddings model?~~ **Resolved (Phase 1):** local `BAAI/bge-small-en-v1.5` (fastembed, 384-d) is the default — zero API cost during development. OpenAI `text-embedding-3-large` retained as the Phase-3 A/B swap (see §8 Stack table — "swap-testable baseline").
 - Should the eval dashboard be public (sharable URL) or local-only?
 - Is there value in opening the golden dataset itself as a community contribution?
 - For Phase 5, do we need a hosted demo or is a recorded walkthrough enough?
