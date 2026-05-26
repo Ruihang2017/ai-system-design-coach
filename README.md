@@ -142,7 +142,7 @@ Tests are hermetic — no API keys, no network, no running Qdrant required.
 # Backend — fast unit + eval harness suite
 cd backend
 pytest
-# → 79 passed, 2 deselected (deselected: @pytest.mark.slow + @pytest.mark.eval)
+# → 97 passed, 4 deselected (deselected: @pytest.mark.slow + @pytest.mark.eval)
 
 # Backend — gated regression guard (requires Qdrant + OPENAI_API_KEY)
 pytest -m eval
