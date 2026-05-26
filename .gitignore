@@ -29,6 +29,7 @@ qdrant_storage/
 
 # --- Eval run logs (keep dir, ignore generated logs) ---
 **/reports/eval_runs/*.jsonl
+**/reports/eval_runs/*.json
 **/reports/eval_runs/*.html
 !reports/eval_runs/.gitkeep
 
