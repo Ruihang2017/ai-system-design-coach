@@ -86,7 +86,8 @@ class RAGOrchestrator:
             config_snapshot={
                 "top_k": self._settings.top_k, "chunk_size": self._settings.chunk_size,
                 "embed_model": self._settings.embed_model, "score_threshold": self._settings.score_threshold,
-                "rerank": False, "rewrite_enabled": self._settings.rewrite_enabled,
+                "rerank": self._settings.rerank_enabled, "hybrid": self._settings.hybrid_enabled,
+                "rewrite_enabled": self._settings.rewrite_enabled,
             },
         )
         self._logger.log(record)
@@ -100,12 +101,20 @@ def build_orchestrator(settings: Settings | None = None) -> RAGOrchestrator:
 
     from app.providers.embeddings import get_embedding_provider
     from app.providers.llm import get_llm_provider
+    from app.rag.reranker import get_reranker
     from app.rag.retriever import Retriever
+    from app.rag.sparse import get_sparse_provider
 
     s = settings or default_settings
     embedder = get_embedding_provider(s)
     client = QdrantClient(url=s.qdrant_url)
-    retriever = Retriever(client, s.qdrant_collection, embedder, s.top_k)
+    reranker = get_reranker(s)
+    sparse = get_sparse_provider(s) if s.hybrid_enabled else None
+    retriever = Retriever(
+        client, s.qdrant_collection, embedder, s.top_k,
+        reranker=reranker, rerank_candidates=s.rerank_candidates,
+        hybrid=s.hybrid_enabled, sparse_embedder=sparse,
+    )
     llm = get_llm_provider(s)
     prompts = Path(__file__).parent / "prompts"
     generator = Generator(llm, (prompts / "generate_answer.md").read_text(encoding="utf-8"))

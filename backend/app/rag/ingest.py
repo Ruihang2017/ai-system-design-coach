@@ -83,7 +83,7 @@ def build_index(
     sources: list[dict],
     client: QdrantClient | None = None,
     dense_embedder: EmbeddingProvider | None = None,
-    sparse_embedder: "SparseProvider | None" = None,
+    sparse_embedder: SparseProvider | None = None,
     fetch: Callable[[str], str | None] = fetch_url,
 ) -> tuple[str, int]:
     dense_embedder = dense_embedder or get_embedding_provider(settings)

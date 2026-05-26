@@ -15,23 +15,23 @@ from app.evals.dataset import load_dataset
 from app.evals.runner import evaluate
 from app.rag.orchestrator import build_orchestrator
 
-# Baseline observed on 2026-05-26 after the eval-driven generate-prompt revision
-# (run_id a90c620e3301). These are regression FLOORS, not targets.
+# Baseline observed on 2026-05-26 after applying Phase 3 retrieval winner
+# (hybrid=True, collection=ai_coach_cs1000_hybrid, run_id 9910c0d19ac7).
+# These are regression FLOORS, not targets.
 # Formula: floor = round_down_to_nearest_0.05(observed) - 0.05, clamped >= 0.
 #
 # History:
 #   run 99cf20be (initial prompt): refusal_acc 0.51, answer_rate 0.36, pass 0.45
-#   run a90c620e (revised prompt): refusal_acc 0.82, answer_rate 0.77, pass 0.62
-# The prompt fix cut false refusals on grounded questions without breaking
-# genuine/adversarial refusals (still ~24/25 correct on the refusal subset).
-# PRD target refusal_accuracy >= 0.95 is still unmet; the remaining gap is now a
-# RETRIEVAL/CORPUS problem (source_recall ~0.61) — a Phase-3 improvement area.
+#   run a90c620e (revised prompt, dense): refusal_acc 0.82, answer_rate 0.77, pass 0.62
+#   run 9910c0d1 (Phase 3 hybrid applied): refusal_acc 0.83, answer_rate 0.81, pass 0.63
+# Hybrid retrieval improved answer_rate (+0.04) and source_recall (+0.03) vs dense baseline.
+# PRD target refusal_accuracy >= 0.95 is still unmet; corpus coverage remains the gap.
 # Update these intentionally when the pipeline genuinely improves.
 BASELINE = {
-    "refusal_accuracy": 0.75,    # observed 0.82
-    "answer_rate": 0.70,         # observed 0.7733
-    "source_recall_at_k": 0.55,  # observed 0.6133
-    "pass_rate": 0.55,           # observed 0.62
+    "refusal_accuracy": 0.75,    # observed 0.83
+    "answer_rate": 0.75,         # observed 0.8133
+    "source_recall_at_k": 0.55,  # observed 0.64
+    "pass_rate": 0.55,           # observed 0.63
     "citation_validity": 0.95,   # observed 1.0 (trivially perfect; floor at 0.95)
 }
 
