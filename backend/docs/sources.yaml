@@ -28,3 +28,11 @@ sources:
     title: Redis - Vector Database
   - url: https://opentelemetry.io/docs/concepts/observability-primer/
     title: OpenTelemetry - Observability Primer
+  - url: https://en.wikipedia.org/wiki/Retrieval-augmented_generation
+    title: Wikipedia - Retrieval-Augmented Generation
+  - url: https://aws.amazon.com/what-is/retrieval-augmented-generation/
+    title: AWS - What is RAG
+  - url: https://en.wikipedia.org/wiki/Vector_database
+    title: Wikipedia - Vector Database
+  - url: https://en.wikipedia.org/wiki/Word_embedding
+    title: Wikipedia - Word Embedding
