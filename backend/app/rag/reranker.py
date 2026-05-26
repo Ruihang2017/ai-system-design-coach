@@ -34,7 +34,7 @@ class LocalCrossEncoderReranker:
     """fastembed TextCrossEncoder. Downloads the model on first use."""
 
     def __init__(self, model_name: str) -> None:
-        from fastembed import TextCrossEncoder
+        from fastembed.rerank.cross_encoder import TextCrossEncoder
 
         self._model = TextCrossEncoder(model_name=model_name)
 
