@@ -24,6 +24,13 @@ class Settings(BaseSettings):
     score_threshold: float = 0.30
     rewrite_enabled: bool = True
 
+    # Retrieval tuning (Phase 3). Defaults keep current behavior (dense, no rerank).
+    rerank_enabled: bool = False
+    rerank_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
+    rerank_candidates: int = 20
+    hybrid_enabled: bool = False
+    sparse_model: str = "Qdrant/bm25"
+
     # Logging
     log_dir: str = "reports/eval_runs"
 
