@@ -3,7 +3,7 @@
 import logging
 from functools import lru_cache
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -37,7 +37,17 @@ def get_orchestrator():
 
 @app.post("/query", response_model=AnswerResult)
 def query(req: QueryRequest, orchestrator=Depends(get_orchestrator)) -> AnswerResult:
-    return orchestrator.answer(req.query)
+    try:
+        return orchestrator.answer(req.query)
+    except Exception as exc:  # noqa: BLE001 - surface upstream failures as a CORS-safe error
+        # Raising HTTPException routes the response back through the CORS
+        # middleware (unlike an unhandled exception, which bypasses it and the
+        # browser then misreports the resulting 500 as a CORS failure).
+        logger.exception("Query pipeline failed for query=%r", req.query)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Upstream pipeline error ({type(exc).__name__}): {exc}",
+        ) from exc
 
 
 @app.get("/health")

@@ -35,6 +35,24 @@ def test_query_validation_error_on_missing_field():
     app.dependency_overrides.clear()
 
 
+def test_query_upstream_error_returns_502_with_cors_headers():
+    """An upstream/provider failure (e.g. OpenAI 429) must return a clean,
+    CORS-headed error instead of a bare 500 that the browser misreports as CORS."""
+
+    class BoomOrchestrator:
+        def answer(self, query: str):
+            raise RuntimeError("Error code: 429 - insufficient_quota")
+
+    app.dependency_overrides[get_orchestrator] = lambda: BoomOrchestrator()
+    client = TestClient(app, raise_server_exceptions=False)
+    resp = client.post("/query", json={"query": "hi"}, headers={"Origin": "http://localhost:5173"})
+    assert resp.status_code == 502
+    # The whole point: the CORS header is present on the error response.
+    assert resp.headers.get("access-control-allow-origin") == "*"
+    assert "insufficient_quota" in resp.json()["detail"]
+    app.dependency_overrides.clear()
+
+
 def test_health_ok(monkeypatch):
     class _FakeQdrant:
         def __init__(self, *args, **kwargs):
