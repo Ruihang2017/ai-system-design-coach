@@ -53,3 +53,20 @@ class EvalReport(BaseModel):
     n_questions: int
     metrics: dict[str, float] = Field(default_factory=dict)
     outcomes: list[QuestionOutcome] = Field(default_factory=list)
+
+
+class RetrievalReport(BaseModel):
+    label: str
+    config: dict = Field(default_factory=dict)
+    n_questions: int
+    metrics: dict[str, float] = Field(default_factory=dict)
+    per_question: list[dict] = Field(default_factory=list)
+
+
+class SweepReport(BaseModel):
+    run_id: str
+    ts: str
+    variants: list[RetrievalReport] = Field(default_factory=list)
+    stage_winners: dict = Field(default_factory=dict)
+    winner_label: str = ""
+    winner_config: dict = Field(default_factory=dict)
