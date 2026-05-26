@@ -15,18 +15,23 @@ from app.evals.dataset import load_dataset
 from app.evals.runner import evaluate
 from app.rag.orchestrator import build_orchestrator
 
-# Baseline observed on 2026-05-26 (first Phase-2 run, run_id 99cf20be4f10).
-# These are regression FLOORS, not targets.
+# Baseline observed on 2026-05-26 after the eval-driven generate-prompt revision
+# (run_id a90c620e3301). These are regression FLOORS, not targets.
 # Formula: floor = round_down_to_nearest_0.05(observed) - 0.05, clamped >= 0.
-# PRD targets: refusal_accuracy >= 0.95 (the pipeline does not meet this yet;
-# the low refusal_accuracy is caused by ~48/75 grounded questions being
-# over-refused; that is a Phase-3 improvement area).
+#
+# History:
+#   run 99cf20be (initial prompt): refusal_acc 0.51, answer_rate 0.36, pass 0.45
+#   run a90c620e (revised prompt): refusal_acc 0.82, answer_rate 0.77, pass 0.62
+# The prompt fix cut false refusals on grounded questions without breaking
+# genuine/adversarial refusals (still ~24/25 correct on the refusal subset).
+# PRD target refusal_accuracy >= 0.95 is still unmet; the remaining gap is now a
+# RETRIEVAL/CORPUS problem (source_recall ~0.61) — a Phase-3 improvement area.
 # Update these intentionally when the pipeline genuinely improves.
 BASELINE = {
-    "refusal_accuracy": 0.45,    # observed 0.51
-    "answer_rate": 0.30,         # observed 0.36
-    "source_recall_at_k": 0.55,  # observed 0.6267
-    "pass_rate": 0.40,           # observed 0.45
+    "refusal_accuracy": 0.75,    # observed 0.82
+    "answer_rate": 0.70,         # observed 0.7733
+    "source_recall_at_k": 0.55,  # observed 0.6133
+    "pass_rate": 0.55,           # observed 0.62
     "citation_validity": 0.95,   # observed 1.0 (trivially perfect; floor at 0.95)
 }
 
