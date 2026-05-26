@@ -1,5 +1,6 @@
 """Write HTML and JSON eval reports from an EvalReport."""
 
+import html
 from pathlib import Path
 
 from app.evals.models import EvalReport, QuestionOutcome
@@ -22,13 +23,13 @@ def _render_html(report: EvalReport) -> str:
         citations_str = ", ".join(str(c) for c in o.citations) or "—"
         return (
             f'<tr class="{row_class}">'
-            f"<td>{o.id}</td>"
-            f"<td>{o.type}</td>"
-            f"<td>{truncated_q}</td>"
+            f"<td>{html.escape(o.id)}</td>"
+            f"<td>{html.escape(o.type)}</td>"
+            f"<td>{html.escape(truncated_q)}</td>"
             f"<td>{'yes' if o.should_refuse else 'no'}</td>"
             f"<td>{'yes' if o.refused else 'no'}</td>"
             f"<td>{'PASS' if o.passed else 'FAIL'}</td>"
-            f"<td>{citations_str}</td>"
+            f"<td>{html.escape(citations_str)}</td>"
             f"<td>{'yes' if o.source_hit else 'no'}</td>"
             f"</tr>"
         )

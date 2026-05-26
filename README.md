@@ -8,33 +8,61 @@
 
 | | |
 |---|---|
-| **Current Phase** | Phase 1 — Basic RAG |
-| **Phase Status** | Implementation complete 2026-05-26 |
+| **Current Phase** | Phase 2 — Golden Eval Dataset |
+| **Phase Status** | Complete 2026-05-26 |
 | **Pipeline** | End-to-end working: ingest → chunk → embed → retrieve → generate → cite |
 | **UI** | Minimal React/TS chat with clickable citations + Evaluation panel |
-| **Formal Eval Harness** | Phase 2 (golden dataset + Recall@k / MRR / faithfulness benchmark) |
+| **Corpus** | 18 sources / 373 chunks (Option A corpus fix included) |
+| **Eval Harness** | Deterministic 100-question benchmark + HTML/JSON score reports |
 
 ---
 
-## Preliminary Numbers *(2026-05-26 — not the gating benchmark)*
+## Latest Eval Scores *(2026-05-26 — after eval-driven prompt fix)*
 
-These are sanity-check figures from live ingestion and local-embedding retrieval. The formal scored eval (Recall@5, MRR, faithfulness) lands in Phase 2.
+The table below shows the before/after from the Phase 2 benchmark run. The **eval-first workflow** — measure → identify failure mode → fix → re-measure — is the project's core thesis.
 
-| Metric | Value | Notes |
-|---|---|---|
-| Corpus | 14 sources / 285 chunks | Ingested into Qdrant `ai_coach_docs` |
-| Embed model | `BAAI/bge-small-en-v1.5` (384-d, local) | No API key needed for retrieval |
-| Top-5 cosine — RAG definition query | 0.82 / 0.81 / 0.80 / 0.76 / 0.74 | All hits from LangChain RAG tutorial |
-| Top-5 cosine — faithfulness metric query | 0.75 / 0.72 / 0.70 / … | Top 3 hits from RAGAS source |
-| Formal Recall@5 / MRR / Faithfulness | **TBD — Phase 2** | Gating targets: ≥85% / ≥0.70 / ≥0.90 |
+| Metric | Before fix | After fix | PRD Target |
+|---|---|---|---|
+| refusal_accuracy | 0.51 | **0.82** | ≥ 0.95 — not yet met (Phase 3) |
+| answer_rate (grounded Qs) | 0.36 | **0.77** | — |
+| source_recall@5 | 0.63 | **0.61** | ≥ 0.85 — not yet met (Phase 3) |
+| pass_rate | 0.45 | **0.62** | ≥ 0.80 |
+| citation_validity | 1.00 | **1.00** | — |
 
-**Preliminary (local bge-small); formal Recall@k / MRR / faithfulness benchmark is Phase 2.**
+The first benchmark run exposed severe over-refusal on grounded questions. A single eval-driven revision of the generation prompt cut false refusals dramatically without breaking genuine refusals (adversarial questions still ~24/25 correct). The remaining gap to PRD targets is a retrieval/corpus problem — the Phase 3 lever (better chunking, reranker, corpus coverage).
 
 ---
 
 ## Eval-First Philosophy
 
 Every answer is grounded in retrieved source material and refuses when context is insufficient — it never fills gaps with parametric knowledge. Every claim is cited with inline `[n]` markers backed by a specific chunk; the citation validator downgrades unsupported answers to the canonical refusal. Every `/query` request is logged as a structured JSONL record (query, retrieved chunks + scores, citations, latency, cost, refused flag). This log is the substrate the Phase 2–4 eval harness reads to compute Recall@k, faithfulness, correctness, and citation accuracy. The differentiator is not the chat UI; it is the measurement infrastructure around it.
+
+---
+
+## Evaluation Workflow
+
+**Corpus:** 18 sources / 373 chunks ingested into Qdrant `ai_coach_docs`.
+
+**Golden dataset:** `backend/app/evals/golden/dataset.yaml` — 100 questions across 7 types (definition, comparison, architecture, troubleshooting, multi_hop, refusal, adversarial).
+
+**Metrics (deterministic, no LLM judge):** refusal_accuracy, answer_rate, source_recall@5, citation_validity, pass_rate. RAGAS/faithfulness deferred to Phase 4.
+
+```powershell
+# (Re)build the corpus — Qdrant must be running
+cd backend
+python scripts/ingest.py
+
+# Run the full benchmark — produces an HTML+JSON report
+python scripts/run_evals.py
+# → backend/reports/eval_runs/eval-<run_id>.{html,json}
+
+# Fast unit + harness suite (hermetic, no keys/network)
+pytest
+# → 79 passed, 2 deselected
+
+# Gated regression guard — baseline floors enforced
+pytest -m eval
+```
 
 ---
 
@@ -92,10 +120,13 @@ Expected: grounded cited answers on AI-engineering questions, with ≥2 correct 
 Tests are hermetic — no API keys, no network, no running Qdrant required.
 
 ```powershell
-# Backend
+# Backend — fast unit + eval harness suite
 cd backend
 pytest
-# → 43 passed, 1 deselected (deselected: @pytest.mark.slow real-fastembed download)
+# → 79 passed, 2 deselected (deselected: @pytest.mark.slow + @pytest.mark.eval)
+
+# Backend — gated regression guard (requires Qdrant + OPENAI_API_KEY)
+pytest -m eval
 
 # Frontend
 cd frontend
@@ -205,6 +236,7 @@ ai-system-design-coach/
 
 ## Documentation
 
-- **Latest handover:** [`HANDOVERS/2026-05-26_0046_phase1-basic-rag.md`](HANDOVERS/2026-05-26_0046_phase1-basic-rag.md)
+- **Latest handover:** [`HANDOVERS/2026-05-26_1345_phase2-eval-and-corpus.md`](HANDOVERS/2026-05-26_1345_phase2-eval-and-corpus.md)
 - **PRD:** [`PRD.md`](PRD.md)
 - **Phase 1 Design Spec:** [`docs/superpowers/specs/2026-05-25-phase1-basic-rag-design.md`](docs/superpowers/specs/2026-05-25-phase1-basic-rag-design.md)
+- **Phase 2 Plan:** [`docs/superpowers/plans/2026-05-26-phase2-eval-harness.md`](docs/superpowers/plans/2026-05-26-phase2-eval-harness.md)

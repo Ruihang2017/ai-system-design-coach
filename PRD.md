@@ -109,6 +109,17 @@ Evaluates the *creator* of this system as a candidate. The eval rigor is the sig
 - Cost per query: **< $0.02**
 - Regression detection: any change that drops a gating metric by >2% fails CI.
 
+### Baseline *(2026-05-26 — Phase 2 first measured run)*
+
+| Metric | Measured | Target | Gap |
+|---|---|---|---|
+| Refusal Accuracy | 0.82 | ≥ 0.95 | –0.13 — retrieval/corpus (Phase 3) |
+| Source Recall@5 | 0.61 | ≥ 0.85 | –0.24 — retrieval/corpus (Phase 3) |
+| Pass Rate | 0.62 | ≥ 0.80 | –0.18 |
+| Citation Validity | 1.00 | ≥ 0.90 | at target |
+
+Targets above are unchanged; this annotation records the current state as Phase 3 begins.
+
 ---
 
 ## 7. Functional Requirements
@@ -200,9 +211,10 @@ Doc ingestion → chunking → embedding → retrieval → generation with citat
 **Done when:** 20 sample questions return cited answers.
 **Shipped:** pipeline + minimal UI shipped; ingestion/retrieval verified live (14 sources, 285 chunks); full cited-answer smoke pending user's `OPENAI_API_KEY` (plumbing verified via fake LLM + real retrieval).
 
-### Phase 2 — Golden Eval Dataset *(Week 3)*
+### Phase 2 — Golden Eval Dataset *(Week 3)* ✅ Complete — 2026-05-26
 100 benchmark questions with expected answers, required sources, refusal cases.
 **Done when:** `pytest evals/` produces a score report.
+**Shipped:** 100-question golden benchmark + deterministic eval harness; `pytest -m eval`/`run_evals.py` produce a score report; first run surfaced over-refusal, fixed via an eval-driven prompt revision (refusal_accuracy 0.51→0.82, answer_rate 0.36→0.77, pass_rate 0.45→0.62).
 
 ### Phase 3 — Retrieval Eval Dashboard *(Week 4)*
 Recall@k, Precision@k, MRR, context precision. A/B chunk sizes, top-k values, hybrid vs vector, reranker on/off.
@@ -225,9 +237,10 @@ LangSmith integration, cost tracking, latency breakdown, eval history, regressio
 | Golden dataset is biased or incomplete | High | High | 7 question types; include 15+ adversarial and refusal cases; review with peers |
 | LLM-as-judge metrics drift between runs | Medium | Medium | Pin judge model version; use deterministic settings; average across 3 runs |
 | Eval costs balloon | Medium | Medium | Cache embeddings; batch eval calls; use cheaper judge for routine runs |
-| Project reads as "yet another RAG demo" | Medium | High | Lead the README with eval results, not features. Show before/after reports. |
+| Project reads as "yet another RAG demo" | Medium | High | Actively mitigated (eval-first): before/after benchmark reports now exist from Phase 2; README leads with scored results. |
 | Scope creep into agents, tools, fine-tuning | High | High | Strict non-goals. Defer to v2. |
 | Doc site bot-blocking (403 on automated fetch) | Medium | Low | Resilient ingestion: failing sources are logged and skipped; fetchable alternatives substituted in allowlist (observed in Phase 1: 4 URLs replaced). |
+| Corpus reproducibility gap | Medium | Medium | Phase 1 design spec claims `docs/raw/` caches fetched docs for reproducibility, but this was never implemented — `fetcher.py` fetches in memory only; chunk text persists in Qdrant. Re-ingest depends on source URLs remaining live. Mitigation for Phase 3: either implement the `docs/raw/` cache or remove the spec claim. |
 
 ---
 
