@@ -31,6 +31,7 @@ qdrant_storage/
 **/reports/eval_runs/*.jsonl
 **/reports/eval_runs/*.json
 **/reports/eval_runs/*.html
+**/reports/eval_runs/*.md
 !reports/eval_runs/.gitkeep
 
 # --- OS / IDE ---

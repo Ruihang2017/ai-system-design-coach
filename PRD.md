@@ -6,7 +6,7 @@
 |---|---|
 | **Status** | Draft v1.0 |
 | **Owner** | Product Engineering |
-| **Last Updated** | May 25, 2026 |
+| **Last Updated** | May 26, 2026 |
 | **Stage** | 0→1 MVP |
 
 ---
@@ -109,16 +109,16 @@ Evaluates the *creator* of this system as a candidate. The eval rigor is the sig
 - Cost per query: **< $0.02**
 - Regression detection: any change that drops a gating metric by >2% fails CI.
 
-### Baseline *(2026-05-26 — Phase 2 first measured run)*
+### Baseline *(2026-05-26 — Phase 3 after: hybrid retrieval applied)*
 
 | Metric | Measured | Target | Gap |
 |---|---|---|---|
-| Refusal Accuracy | 0.82 | ≥ 0.95 | –0.13 — retrieval/corpus (Phase 3) |
-| Source Recall@5 | 0.61 | ≥ 0.85 | –0.24 — retrieval/corpus (Phase 3) |
-| Pass Rate | 0.62 | ≥ 0.80 | –0.18 |
+| Refusal Accuracy | 0.83 | ≥ 0.95 | –0.12 — corpus coverage gap |
+| Source Recall@5 | 0.64 | ≥ 0.85 | –0.21 — corpus coverage gap |
+| Pass Rate | 0.63 | ≥ 0.80 | –0.17 |
 | Citation Validity | 1.00 | ≥ 0.90 | at target |
 
-Targets above are unchanged; this annotation records the current state as Phase 3 begins.
+Targets above are unchanged. Phase 3 hybrid retrieval closed part of the gap (answer_rate 0.77→0.81, source_recall 0.61→0.64). The remaining gap is corpus coverage — retrieval hyperparameter tuning is now exhausted as a lever. Next lever: corpus expansion (Phase 3.5/ongoing).
 
 ---
 
@@ -216,8 +216,8 @@ Doc ingestion → chunking → embedding → retrieval → generation with citat
 **Done when:** `pytest evals/` produces a score report.
 **Shipped:** 100-question golden benchmark + deterministic eval harness; `pytest -m eval`/`run_evals.py` produce a score report; first run surfaced over-refusal, fixed via an eval-driven prompt revision (refusal_accuracy 0.51→0.82, answer_rate 0.36→0.77, pass_rate 0.45→0.62).
 
-### Phase 3 — Retrieval Eval Dashboard *(Week 4)*
-Recall@k, Precision@k, MRR, context precision. A/B chunk sizes, top-k values, hybrid vs vector, reranker on/off.
+### Phase 3 — Retrieval Eval Dashboard *(Week 4)* ✅ Complete — 2026-05-26
+Deterministic retrieval A/B sweep (chunk-size/dense-vs-hybrid/reranker/top-k) with a declared winner (hybrid cs1000); applied to the live pipeline → answer_rate 0.77→0.81, source_recall 0.61→0.64. Reranker hurt recall and was left off.
 **Done when:** Chunking strategies are compared quantitatively, with a winner.
 
 ### Phase 4 — Answer Eval *(Week 5)*
@@ -240,7 +240,8 @@ LangSmith integration, cost tracking, latency breakdown, eval history, regressio
 | Project reads as "yet another RAG demo" | Medium | High | Actively mitigated (eval-first): before/after benchmark reports now exist from Phase 2; README leads with scored results. |
 | Scope creep into agents, tools, fine-tuning | High | High | Strict non-goals. Defer to v2. |
 | Doc site bot-blocking (403 on automated fetch) | Medium | Low | Resilient ingestion: failing sources are logged and skipped; fetchable alternatives substituted in allowlist (observed in Phase 1: 4 URLs replaced). |
-| Corpus reproducibility gap | Medium | Medium | Phase 1 design spec claims `docs/raw/` caches fetched docs for reproducibility, but this was never implemented — `fetcher.py` fetches in memory only; chunk text persists in Qdrant. Re-ingest depends on source URLs remaining live. Mitigation for Phase 3: either implement the `docs/raw/` cache or remove the spec claim. |
+| Corpus reproducibility gap | Medium | Medium | Phase 1 design spec claims `docs/raw/` caches fetched docs for reproducibility, but this was never implemented — `fetcher.py` fetches in memory only; chunk text persists in Qdrant. Re-ingest depends on source URLs remaining live. The `ai_coach_cs1000_hybrid` collection must be rebuilt via `run_sweep.py`/`build_index` in a fresh environment. |
+| Corpus coverage ceiling | High | High | Retrieval tuning is now data-driven (sweep harness exists); source_recall@5 is 0.64 — roughly ⅓ of grounded questions lack a retrievable supporting source. The current ceiling is corpus coverage, not retrieval hyperparameters. Next lever: corpus expansion (Phase 3.5/ongoing). |
 
 ---
 

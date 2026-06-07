@@ -8,28 +8,28 @@
 
 | | |
 |---|---|
-| **Current Phase** | Phase 2 — Golden Eval Dataset |
+| **Current Phase** | Phase 3 — Retrieval Eval & Tuning |
 | **Phase Status** | Complete 2026-05-26 |
-| **Pipeline** | End-to-end working: ingest → chunk → embed → retrieve → generate → cite |
+| **Pipeline** | End-to-end working: ingest → chunk → embed → retrieve (hybrid BM25+dense) → generate → cite |
 | **UI** | Minimal React/TS chat with clickable citations + Evaluation panel |
-| **Corpus** | 18 sources / 373 chunks (Option A corpus fix included) |
-| **Eval Harness** | Deterministic 100-question benchmark + HTML/JSON score reports |
+| **Corpus** | 18 sources / 373 chunks; served from `ai_coach_cs1000_hybrid` (Qdrant) |
+| **Eval Harness** | Deterministic 100-question benchmark + retrieval A/B sweep (no LLM) + HTML/JSON/MD reports |
 
 ---
 
-## Latest Eval Scores *(2026-05-26 — after eval-driven prompt fix)*
+## Latest Eval Scores *(2026-05-26 — Phase 3: hybrid retrieval applied)*
 
-The table below shows the before/after from the Phase 2 benchmark run. The **eval-first workflow** — measure → identify failure mode → fix → re-measure — is the project's core thesis.
+Phase 3 ran a deterministic A/B sweep over chunk-size / dense-vs-hybrid / reranker / top-k variants (no LLM, 75 grounded questions) and applied the winner to the live pipeline. The table below shows the full-benchmark before/after.
 
-| Metric | Before fix | After fix | PRD Target |
+| Metric | Phase 2 baseline (dense) | Phase 3 after (hybrid) | PRD Target |
 |---|---|---|---|
-| refusal_accuracy | 0.51 | **0.82** | ≥ 0.95 — not yet met (Phase 3) |
-| answer_rate (grounded Qs) | 0.36 | **0.77** | — |
-| source_recall@5 | 0.63 | **0.61** | ≥ 0.85 — not yet met (Phase 3) |
-| pass_rate | 0.45 | **0.62** | ≥ 0.80 |
+| refusal_accuracy | 0.82 | **0.83** | ≥ 0.95 — not yet met (corpus-coverage gap) |
+| answer_rate (grounded Qs) | 0.77 | **0.81** | — |
+| source_recall@5 | 0.61 | **0.64** | ≥ 0.85 — not yet met (corpus-coverage gap) |
+| pass_rate | 0.62 | **0.63** | ≥ 0.80 |
 | citation_validity | 1.00 | **1.00** | — |
 
-The first benchmark run exposed severe over-refusal on grounded questions. A single eval-driven revision of the generation prompt cut false refusals dramatically without breaking genuine refusals (adversarial questions still ~24/25 correct). The remaining gap to PRD targets is a retrieval/corpus problem — the Phase 3 lever (better chunking, reranker, corpus coverage).
+Hybrid is a real but modest improvement (answer_rate +0.04, source_recall +0.03, no regressions). Metrics remain below PRD targets. With source_recall at 0.64, roughly one-third of grounded questions still lack a retrievable supporting source — the next lever is **corpus expansion**, not further retrieval-hyperparameter tuning.
 
 ---
 
@@ -41,7 +41,7 @@ Every answer is grounded in retrieved source material and refuses when context i
 
 ## Evaluation Workflow
 
-**Corpus:** 18 sources / 373 chunks ingested into Qdrant `ai_coach_docs`.
+**Corpus:** 18 sources / 373 chunks; live collection `ai_coach_cs1000_hybrid` (chunk_size=1000, hybrid BM25+dense RRF, k=5, no reranker). Rebuild via `run_sweep.py` or `build_index`.
 
 **Golden dataset:** `backend/app/evals/golden/dataset.yaml` — 100 questions across 7 types (definition, comparison, architecture, troubleshooting, multi_hop, refusal, adversarial).
 
@@ -58,11 +58,30 @@ python scripts/run_evals.py
 
 # Fast unit + harness suite (hermetic, no keys/network)
 pytest
-# → 79 passed, 2 deselected
+# → 97 passed, 4 deselected
+
+# Slow tests — validates real cross-encoder + BM25 models (no keys needed)
+pytest -m slow
 
 # Gated regression guard — baseline floors enforced
 pytest -m eval
 ```
+
+### Retrieval sweep
+
+`python scripts/run_sweep.py` runs a deterministic, no-LLM retrieval A/B comparison over chunk-size, dense-vs-hybrid, reranker on/off, and top-k variants. It writes an HTML/MD/JSON comparison report to `backend/reports/eval_runs/sweep-*/` and declares a winner by MRR + hit-rate@5.
+
+**Current winner (sweep run sweep-1c8f2d241b73, 75 grounded questions):**
+
+| Variant | recall@5 | hit_rate@5 | MRR |
+|---|---|---|---|
+| cs500_dense | 0.600 | 0.653 | 0.587 |
+| cs1000_dense (prior baseline) | 0.633 | 0.707 | 0.594 |
+| cs1500_dense | 0.613 | 0.693 | 0.596 |
+| **cs1000_hybrid (WINNER)** | **0.653** | **0.733** | **0.617** |
+| cs1000_hybrid + reranker | 0.633 | 0.693 | 0.592 |
+
+Winner applied: **chunk_size=1000, hybrid (BM25+dense RRF), reranker OFF, k=5** → collection `ai_coach_cs1000_hybrid`. Key finding: hybrid beats pure-dense across all metrics; the cross-encoder reranker hurt recall/hit-rate at candidates=20/k=5 (trades recall for precision) so it is left off.
 
 ---
 
@@ -123,7 +142,7 @@ Tests are hermetic — no API keys, no network, no running Qdrant required.
 # Backend — fast unit + eval harness suite
 cd backend
 pytest
-# → 79 passed, 2 deselected (deselected: @pytest.mark.slow + @pytest.mark.eval)
+# → 97 passed, 4 deselected (deselected: @pytest.mark.slow + @pytest.mark.eval)
 
 # Backend — gated regression guard (requires Qdrant + OPENAI_API_KEY)
 pytest -m eval
@@ -148,11 +167,12 @@ Source: `backend/.env.example`. Copy to `backend/.env` before running.
 | `EMBED_PROVIDER` | `fastembed` | No | `fastembed` (local) \| `openai` |
 | `EMBED_MODEL` | `BAAI/bge-small-en-v1.5` | No | Embedding model |
 | `QDRANT_URL` | `http://localhost:6333` | No | Qdrant connection |
-| `QDRANT_COLLECTION` | `ai_coach_docs` | No | Collection name |
+| `QDRANT_COLLECTION` | `ai_coach_cs1000_hybrid` | No | Collection name |
 | `TOP_K` | `5` | No | Retrieval depth |
 | `CHUNK_SIZE` | `1000` | No | Chunk size in chars |
 | `CHUNK_OVERLAP` | `150` | No | Chunk overlap in chars |
-| `SCORE_THRESHOLD` | `0.30` | No | Refusal gate (untuned; Phase 3) |
+| `SCORE_THRESHOLD` | `0.30` | No | Refusal gate (untuned; Phase 4) |
+| `HYBRID_ENABLED` | `true` | No | Enable BM25+dense RRF hybrid retrieval |
 | `REWRITE_ENABLED` | `true` | No | Query rewriting toggle |
 | `LANGCHAIN_TRACING_V2` | `false` | No | LangSmith tracing (optional) |
 | `LANGCHAIN_API_KEY` | — | No | LangSmith key (optional) |
@@ -169,7 +189,8 @@ docs/sources.yaml
   → Fetcher (httpx + trafilatura HTML→Markdown, retry + skip on error)
   → Chunker (LangChain RecursiveCharacterTextSplitter, 1000/150 chars)
   → EmbeddingProvider (fastembed bge-small local, or OpenAI via env)
-  → Qdrant upsert (collection: ai_coach_docs, stable doc_id point IDs)
+  → BM25SparseEncoder (fastembed, for hybrid search)
+  → Qdrant upsert (collection: ai_coach_cs1000_hybrid, named dense+sparse vectors, RRF fusion)
 ```
 
 ### Query Path (per request)
@@ -178,7 +199,8 @@ docs/sources.yaml
 POST /query
   → QueryRewriter (LLM-based abbreviation/ambiguity expansion; toggleable)
   → RefusalGate (short-circuit if no chunk clears SCORE_THRESHOLD)
-  → Retriever (embed query → Qdrant top-k vector search → RetrievedChunk[])
+  → Retriever (embed query → Qdrant hybrid RRF [BM25+dense] top-k → RetrievedChunk[])
+  → Reranker (cross-encoder; OFF by default — hurt recall at k=5)
   → Generator (LLM prompt with numbered chunks [1..k] → answer + [n] citations)
   → CitationValidator (validate [n] ranges; downgrade violations to refusal)
   → RequestLogger (append JSONL to backend/reports/eval_runs/requests-YYYYMMDD.jsonl)
@@ -192,7 +214,7 @@ POST /query
 | Frontend | React + TypeScript (Vite, strict mode) |
 | Backend | FastAPI + Python 3.12 (async, typed) |
 | Vector DB | Qdrant (Docker) |
-| Embeddings | `fastembed` `BAAI/bge-small-en-v1.5` (local, 384-d); OpenAI swap in Phase 3 |
+| Embeddings | `fastembed` `BAAI/bge-small-en-v1.5` (local, 384-d); OpenAI swap in Phase 4 |
 | Orchestration | Thin typed orchestrator; LangChain for text splitting only |
 | Tracing | LangSmith (`@traceable`, env-gated, off by default) |
 | Eval | RAGAS + custom pytest (Phase 2+) |
@@ -208,9 +230,10 @@ ai-system-design-coach/
     app/
       main.py                  # FastAPI app, POST /query, GET /health
       rag/                     # ingest, chunker, retriever, generator, citation_checker, orchestrator
-      evals/                   # eval runners and metrics (Phase 2+)
+      evals/                   # eval runners, retrieval metrics, sweep (Phase 2+)
     scripts/
       ingest.py                # offline ingestion entrypoint
+      run_sweep.py             # Phase 3 retrieval A/B sweep (no LLM)
       run_samples.py           # Phase 1 acceptance smoke (20 questions)
     tests/                     # pytest unit + integration (hermetic, no keys)
     .env.example               # document all required vars
@@ -236,7 +259,7 @@ ai-system-design-coach/
 
 ## Documentation
 
-- **Latest handover:** [`HANDOVERS/2026-05-26_1345_phase2-eval-and-corpus.md`](HANDOVERS/2026-05-26_1345_phase2-eval-and-corpus.md)
+- **Latest handover:** [`HANDOVERS/2026-05-26_2327_phase3-retrieval-eval.md`](HANDOVERS/2026-05-26_2327_phase3-retrieval-eval.md)
 - **PRD:** [`PRD.md`](PRD.md)
 - **Phase 1 Design Spec:** [`docs/superpowers/specs/2026-05-25-phase1-basic-rag-design.md`](docs/superpowers/specs/2026-05-25-phase1-basic-rag-design.md)
 - **Phase 2 Plan:** [`docs/superpowers/plans/2026-05-26-phase2-eval-harness.md`](docs/superpowers/plans/2026-05-26-phase2-eval-harness.md)

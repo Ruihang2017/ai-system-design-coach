@@ -15,7 +15,7 @@ class Settings(BaseSettings):
 
     # Vector DB
     qdrant_url: str = "http://localhost:6333"
-    qdrant_collection: str = "ai_coach_docs"
+    qdrant_collection: str = "ai_coach_cs1000_hybrid"
 
     # Pipeline
     top_k: int = 5
@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     chunk_overlap: int = 150
     score_threshold: float = 0.30
     rewrite_enabled: bool = True
+
+    # Retrieval tuning (Phase 3). Defaults keep current behavior (dense, no rerank).
+    rerank_enabled: bool = False
+    rerank_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
+    rerank_candidates: int = 20
+    hybrid_enabled: bool = True
+    sparse_model: str = "Qdrant/bm25"
 
     # Logging
     log_dir: str = "reports/eval_runs"
